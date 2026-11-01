@@ -1,0 +1,3 @@
+mainmenu "host check (otaa_class_a)"
+source "../../components/lora_basics_modem/Kconfig"
+source "../../examples/otaa_class_a/main/Kconfig.projbuild"

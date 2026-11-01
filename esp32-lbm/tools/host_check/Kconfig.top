@@ -1,0 +1,3 @@
+mainmenu "host check"
+source "../../components/lora_basics_modem/Kconfig"
+source "../../examples/periodic_uplink/main/Kconfig.projbuild"

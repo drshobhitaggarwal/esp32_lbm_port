@@ -1,0 +1,301 @@
+menu "LoRa Basics Modem (Semtech LBM)"
+
+    config LBM_MODEM_TRACE
+        bool "Enable LBM trace logs"
+        default y
+        help
+            Enables the stack's internal trace output (printed with vprintf, so it
+            goes to the normal ESP-IDF console).
+
+    config LBM_MODEM_TRACE_DEEP
+        bool "Enable deep trace logs"
+        depends on LBM_MODEM_TRACE
+        default n
+
+    choice LBM_BOARD
+        prompt "Board preset"
+        default LBM_BOARD_CUSTOM
+        help
+            A preset only changes the defaults of the options below (TCXO, front-end
+            pins). Pick Custom to set everything yourself. Heltec WiFi LoRa 32 V1/V2
+            use an SX1276/SX1278 and are not supported by this component.
+
+        config LBM_BOARD_CUSTOM
+            bool "Custom"
+        config LBM_BOARD_HELTEC_V3
+            bool "Heltec WiFi LoRa 32 V3 / Wireless Tracker / Wireless Paper"
+        config LBM_BOARD_HELTEC_V4_2
+            bool "Heltec WiFi LoRa 32 V4.2 (GC1109 front-end)"
+        config LBM_BOARD_HELTEC_V4_3
+            bool "Heltec WiFi LoRa 32 V4.3 (KCT8103L front-end)"
+    endchoice
+
+    config LBM_BOARD_HELTEC
+        bool
+        default y if LBM_BOARD_HELTEC_V3 || LBM_BOARD_HELTEC_V4_2 || LBM_BOARD_HELTEC_V4_3
+
+    config LBM_BOARD_HELTEC_V4
+        bool
+        default y if LBM_BOARD_HELTEC_V4_2 || LBM_BOARD_HELTEC_V4_3
+
+    menu "Radio"
+
+        choice LBM_RADIO
+            prompt "Transceiver"
+            default LBM_RADIO_SX1262
+            help
+                Only the SX126x family is ported. The chip selects the power
+                amplifier configuration used for transmit.
+
+            config LBM_RADIO_SX1262
+                bool "SX1262 (150-960 MHz, up to +22 dBm)"
+            config LBM_RADIO_SX1268
+                bool "SX1268 (410-810 MHz, up to +22 dBm)"
+            config LBM_RADIO_SX1261
+                bool "SX1261 (150-960 MHz, up to +15 dBm)"
+        endchoice
+
+        config LBM_RADIO_REG_MODE_LDO
+            bool "Use LDO regulator only (no DC-DC inductor on the module)"
+            default n
+            help
+                Leave off if the module has the DC-DC inductor fitted (most do).
+
+        config LBM_RADIO_DIO2_RF_SWITCH
+            bool "DIO2 drives the RF switch (TXEN)"
+            default y
+
+        config LBM_RADIO_RX_BOOST
+            bool "Enable RX boosted gain"
+            default n
+
+        config LBM_RADIO_TCXO
+            bool "TCXO powered and controlled by the radio (DIO3)"
+            default y if LBM_BOARD_HELTEC
+            default n
+            help
+                Enable if the module has a TCXO supplied from DIO3. Leave off for
+                modules with a plain crystal. A wrong setting makes radio init fail.
+
+        choice LBM_RADIO_TCXO_VOLTAGE
+            prompt "TCXO supply voltage"
+            depends on LBM_RADIO_TCXO
+            default LBM_RADIO_TCXO_1V8
+
+            config LBM_RADIO_TCXO_1V6
+                bool "1.6 V"
+            config LBM_RADIO_TCXO_1V7
+                bool "1.7 V"
+            config LBM_RADIO_TCXO_1V8
+                bool "1.8 V"
+            config LBM_RADIO_TCXO_2V2
+                bool "2.2 V"
+            config LBM_RADIO_TCXO_2V4
+                bool "2.4 V"
+            config LBM_RADIO_TCXO_2V7
+                bool "2.7 V"
+            config LBM_RADIO_TCXO_3V0
+                bool "3.0 V"
+            config LBM_RADIO_TCXO_3V3
+                bool "3.3 V"
+        endchoice
+
+        config LBM_RADIO_TCXO_STARTUP_MS
+            int "TCXO startup time (ms)"
+            depends on LBM_RADIO_TCXO
+            default 5
+            range 1 100
+
+        config LBM_TX_POWER_OFFSET_DB
+            int "Board TX power offset (dB)"
+            default 0
+            range -20 20
+            help
+                Added to the power requested by the stack. Use a negative value to
+                account for antenna/matching loss, positive to compensate for an
+                external PA.
+
+    endmenu
+
+    menu "Pins and SPI"
+
+        choice LBM_SPI_HOST
+            prompt "SPI host"
+            default LBM_SPI_HOST_SPI2
+
+            config LBM_SPI_HOST_SPI2
+                bool "SPI2_HOST"
+            config LBM_SPI_HOST_SPI3
+                bool "SPI3_HOST"
+        endchoice
+
+        config LBM_SPI_CLOCK_HZ
+            int "SPI clock (Hz)"
+            default 8000000
+            range 1000000 16000000
+
+        # Defaults are the radio pins shared by the Heltec ESP32-S3 + SX1262 boards
+        # (WiFi LoRa 32 V3/V4, Wireless Tracker, Wireless Paper).
+        config LBM_PIN_MOSI
+            int "MOSI GPIO"
+            default 10
+        config LBM_PIN_MISO
+            int "MISO GPIO"
+            default 11
+        config LBM_PIN_SCLK
+            int "SCLK GPIO"
+            default 9
+        config LBM_PIN_NSS
+            int "NSS (chip select) GPIO"
+            default 8
+        config LBM_PIN_NRST
+            int "NRESET GPIO"
+            default 12
+        config LBM_PIN_BUSY
+            int "BUSY GPIO"
+            default 13
+        config LBM_PIN_DIO1
+            int "DIO1 (radio IRQ) GPIO"
+            default 14
+        config LBM_PIN_RXEN
+            int "RXEN GPIO (-1 if not used)"
+            default -1
+            help
+                For modules that need the host to drive an external RF switch. The
+                port sets the pin from the SetRx/SetTx opcodes it sends. Untested.
+        config LBM_PIN_TXEN
+            int "TXEN GPIO (-1 if not used)"
+            default 5 if LBM_BOARD_HELTEC_V4_3
+            default -1
+            help
+                Heltec V4.3: this is the front-end's CTX line.
+
+        config LBM_PIN_FIXED1
+            int "Fixed-level GPIO 1 (-1 if not used)"
+            default 7 if LBM_BOARD_HELTEC_V4
+            default -1
+            help
+                Output driven to a fixed level at start-up and never changed. For
+                front-end power/enable lines. Heltec V4: front-end supply.
+        config LBM_LEVEL_FIXED1
+            int "Level for fixed GPIO 1 (0 or 1)"
+            range 0 1
+            default 1
+        config LBM_PIN_FIXED2
+            int "Fixed-level GPIO 2 (-1 if not used)"
+            default 2 if LBM_BOARD_HELTEC_V4
+            default -1
+            help
+                Heltec V4: front-end chip enable.
+        config LBM_LEVEL_FIXED2
+            int "Level for fixed GPIO 2 (0 or 1)"
+            range 0 1
+            default 1
+        config LBM_PIN_FIXED3
+            int "Fixed-level GPIO 3 (-1 if not used)"
+            default 46 if LBM_BOARD_HELTEC_V4_2
+            default -1
+            help
+                Heltec V4.2: GC1109 CPS, held high so the transmit path uses the PA.
+        config LBM_LEVEL_FIXED3
+            int "Level for fixed GPIO 3 (0 or 1)"
+            range 0 1
+            default 1
+        config LBM_PIN_FIXED4
+            int "Fixed-level GPIO 4 (-1 if not used)"
+            default 36 if LBM_BOARD_HELTEC_V4
+            default -1
+            help
+                Heltec V4: Vext enable, active low.
+        config LBM_LEVEL_FIXED4
+            int "Level for fixed GPIO 4 (0 or 1)"
+            range 0 1
+            default 0 if LBM_BOARD_HELTEC_V4
+            default 1
+
+        config LBM_BUSY_TIMEOUT_MS
+            int "BUSY wait timeout (ms)"
+            default 100
+            range 10 2000
+
+    endmenu
+
+    menu "Stack features"
+
+        config LBM_REGION_EU868
+            bool "EU868"
+            default y
+        config LBM_REGION_US915
+            bool "US915"
+            default y
+        config LBM_REGION_AU915
+            bool "AU915"
+            default n
+        config LBM_REGION_AS923
+            bool "AS923 (groups 1-4)"
+            default n
+        config LBM_REGION_CN470
+            bool "CN470"
+            default n
+        config LBM_REGION_CN470_RP_1_0
+            bool "CN470 (RP 1.0)"
+            default n
+        config LBM_REGION_IN865
+            bool "IN865"
+            default n
+        config LBM_REGION_KR920
+            bool "KR920"
+            default n
+        config LBM_REGION_RU864
+            bool "RU864"
+            default n
+
+        config LBM_CLASS_B
+            bool "Class B"
+            default n
+        config LBM_CLASS_C
+            bool "Class C"
+            default n
+        config LBM_CSMA
+            bool "CSMA (channel activity detection before transmit)"
+            default n
+
+    endmenu
+
+    menu "Runtime"
+
+        config LBM_TASK_CORE
+            int "Core for the modem and IRQ dispatch tasks"
+            default 1
+            range 0 1
+            help
+                Both tasks must share one core. Ignored on single-core chips.
+
+        config LBM_TASK_PRIORITY
+            int "Modem task priority"
+            default 10
+            range 1 20
+
+        config LBM_TASK_STACK_BYTES
+            int "Modem task stack size (bytes)"
+            default 8192
+            range 4096 32768
+
+        config LBM_BOARD_DELAY_MS
+            int "Board delay reported to the stack (ms)"
+            default 2
+            range 0 10
+            help
+                How long the stack should assume it takes this system to start a
+                radio operation after a timer fires. Raise if RX windows are missed.
+
+        config LBM_CRYSTAL_ERROR_PPM
+            int "Clock error reported to the stack (ppm)"
+            default 30
+            range 0 500
+            help
+                Widens RX windows to cover timer error. 0 leaves the stack default.
+
+    endmenu
+
+endmenu

@@ -1,0 +1,8 @@
+# 1 ms ticks: the modem task sleeps in whole ticks
+CONFIG_FREERTOS_HZ=1000
+
+# Lets the LBM timer interrupt notify its dispatch task without a task hop
+CONFIG_ESP_TIMER_SUPPORT_ISR_DISPATCH_METHOD=y
+
+# Larger main task stack for the example's trace output
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=4096

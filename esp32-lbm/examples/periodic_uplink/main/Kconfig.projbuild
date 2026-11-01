@@ -1,0 +1,50 @@
+menu "LoRaWAN example"
+
+    config EXAMPLE_DEV_EUI
+        string "DevEUI (16 hex characters)"
+        default "0000000000000001"
+
+    config EXAMPLE_JOIN_EUI
+        string "JoinEUI / AppEUI (16 hex characters)"
+        default "0000000000000001"
+
+    config EXAMPLE_NWK_KEY
+        string "AppKey for LoRaWAN 1.0.x (NwkKey in 1.1) (32 hex characters)"
+        default "00000000000000000000000000000001"
+        help
+            For a LoRaWAN 1.0.x network server (e.g. a TTN 1.0.x device) this is
+            the device's AppKey.
+
+    config EXAMPLE_APP_KEY
+        string "Gen AppKey / 1.1 AppKey (32 hex characters)"
+        default "00000000000000000000000000000001"
+        help
+            Used for LoRaWAN 1.1 and for multicast key derivation. For a plain
+            1.0.x device the value is not used for the join.
+
+    choice EXAMPLE_REGION
+        prompt "Region"
+        default EXAMPLE_REGION_US915
+
+        config EXAMPLE_REGION_EU868
+            bool "EU868"
+        config EXAMPLE_REGION_US915
+            bool "US915"
+        config EXAMPLE_REGION_AU915
+            bool "AU915"
+        config EXAMPLE_REGION_AS923_GRP1
+            bool "AS923 group 1"
+        config EXAMPLE_REGION_IN865
+            bool "IN865"
+        config EXAMPLE_REGION_KR920
+            bool "KR920"
+        config EXAMPLE_REGION_RU864
+            bool "RU864"
+    endchoice
+
+    config EXAMPLE_UPLINK_PERIOD_S
+        int "Uplink period (seconds)"
+        default 60
+        range 10 864000
+
+endmenu

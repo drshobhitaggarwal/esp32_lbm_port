@@ -1,0 +1,90 @@
+menu "LoRaWAN OTAA Class A example"
+
+    config EXAMPLE_DEV_EUI
+        string "DevEUI (16 hex characters)"
+        default "0000000000000001"
+
+    config EXAMPLE_JOIN_EUI
+        string "JoinEUI / AppEUI (16 hex characters)"
+        default "0000000000000001"
+
+    config EXAMPLE_APP_KEY
+        string "AppKey (32 hex characters)"
+        default "00000000000000000000000000000001"
+        help
+            For a LoRaWAN 1.0.x network server (for example a TTN 1.0.x device)
+            this is the device's AppKey. The example passes it to the stack as
+            both the NwkKey and the AppKey, which is what a 1.0.x join needs.
+
+    choice EXAMPLE_REGION
+        prompt "Region"
+        default EXAMPLE_REGION_US915
+        help
+            The region must also be enabled in LoRa Basics Modem -> Stack features.
+
+        config EXAMPLE_REGION_EU868
+            bool "EU868"
+        config EXAMPLE_REGION_US915
+            bool "US915"
+        config EXAMPLE_REGION_AU915
+            bool "AU915"
+        config EXAMPLE_REGION_AS923_GRP1
+            bool "AS923 group 1"
+        config EXAMPLE_REGION_IN865
+            bool "IN865"
+        config EXAMPLE_REGION_KR920
+            bool "KR920"
+        config EXAMPLE_REGION_RU864
+            bool "RU864"
+    endchoice
+
+    config EXAMPLE_UPLINK_PERIOD_S
+        int "Uplink period (seconds)"
+        default 60
+        range 10 86400
+        help
+            Time between uplinks. A downlink on port 3 can change it at run time.
+            Mind your region's duty cycle and the network's fair-use policy.
+
+    config EXAMPLE_UPLINK_FPORT
+        int "Uplink FPort"
+        default 101
+        range 1 223
+
+    config EXAMPLE_CONFIRMED
+        bool "Send confirmed uplinks"
+        default n
+        help
+            The network server acknowledges each uplink. Costs downlink airtime,
+            so leave off for normal use.
+
+    choice EXAMPLE_ADR_PROFILE
+        prompt "ADR profile"
+        default EXAMPLE_ADR_NETWORK
+
+        config EXAMPLE_ADR_NETWORK
+            bool "Network controlled (static device)"
+        config EXAMPLE_ADR_MOBILE_LONG_RANGE
+            bool "Mobile, long range"
+        config EXAMPLE_ADR_MOBILE_LOW_POWER
+            bool "Mobile, low power"
+    endchoice
+
+    config EXAMPLE_LINK_CHECK_EVERY
+        int "Link check every N uplinks (0 = off)"
+        default 0
+        range 0 1000
+        help
+            Asks the network for the link margin and the number of gateways that
+            heard the device. The result is logged.
+
+    config EXAMPLE_LED_GPIO
+        int "Status LED GPIO (-1 = none)"
+        default 35
+        range -1 48
+        help
+            On when joined, toggles on each finished transmission. Heltec V3 white
+            LED is on GPIO35 (check your board). Do not use 8-14 (radio), and on a
+            V4 not 2, 5, 7, 36 or 46 either.
+
+endmenu
